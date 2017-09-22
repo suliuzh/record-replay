@@ -2,7 +2,6 @@
 
 #include "control.hpp"
 #include "schedule.hpp"
-#include "scheduler_settings.hpp"
 #include "selector_register.hpp"
 
 #include <execution.hpp>
@@ -30,7 +29,7 @@ class Scheduler
 public:
    /// @{
    /// Lifetime
-   Scheduler();
+   Scheduler(unsigned int nr_threads, const schedule_t& schedule, const std::string& selection_strategy);
    ~Scheduler();
    /// @}
 
@@ -85,7 +84,6 @@ private:
    Execution::Status mStatus;
    std::mutex mStatusMutex;
 
-   SchedulerSettings mSettings;
    SelectorUniquePtr mSelector;
 
    std::thread mThread;
@@ -146,11 +144,11 @@ class Scheduler::LocalVars
 public:
    /// @brief Constructor.
 
-   LocalVars();
+   LocalVars(unsigned int nr_threads, const schedule_t& schedule);
 
    /// @brief Getter.
 
-   int nr_threads() const;
+   unsigned int nr_threads() const;
 
    /// @brief Getter.
 
@@ -165,7 +163,7 @@ public:
 private:
    /// @brief The (fixed) number of threads in the program.
 
-   int mNrThreads;
+   unsigned int mNrThreads;
 
    /// @brief The schedule under which the scheduler is driving the program.
 
@@ -182,9 +180,11 @@ private:
 
 // Wrapper functions
 
-static scheduler::Scheduler the_scheduler;
+static std::unique_ptr<scheduler::Scheduler> the_scheduler;
 
 extern "C" {
+void wrapper_create_scheduler(int argc, char* argv[]);
+
 int wrapper_spawn_thread(pthread_t* pid, const pthread_attr_t* attr, void* (*start_routine)(void*),
                          void* args);
 

@@ -30,7 +30,8 @@ public:
    Functions();
 
    void initialize(llvm::Module& module);
-
+   
+   llvm::Function* Wrapper_create_scheduler() const;
    llvm::Function* Wrapper_finish() const;
    llvm::Function* Wrapper_post_lock_instruction() const;
    llvm::Function* Wrapper_post_memory_instruction() const;

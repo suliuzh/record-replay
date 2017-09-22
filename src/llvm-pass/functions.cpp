@@ -40,6 +40,12 @@ void Functions::initialize(llvm::Module& module)
    Type* void_ptr_type = builder.getInt8PtrTy();
    Type* type_char_ptr = builder.getInt8PtrTy();
 
+   // Wrapper_create_scheduler
+   {
+      auto* type = FunctionType::get(void_type, {builder.getInt32Ty(), type_char_ptr}, false);
+      add_wrapper_prototype(module, "wrapper_create_scheduler", type, attributes);
+   }
+   
    // wrapper_spawn_thread
    {
       Type* type_pthread = module.getTypeByName("struct._opaque_pthread_t");
@@ -97,6 +103,13 @@ void Functions::add_wrapper_prototype(llvm::Module& module, const std::string& n
    Function* function = cast<Function>(module.getOrInsertFunction(name, type, attributes));
    m_wrappers.insert(function_map_t::value_type(name, function));
    m_black_listed.insert(function->getName().str());
+}
+
+//-----------------------------------------------------------------------------------------------
+
+llvm::Function* Functions::Wrapper_create_scheduler() const
+{
+   return m_wrappers.find("Wrapper_create_scheduler")->second;
 }
 
 //-----------------------------------------------------------------------------------------------

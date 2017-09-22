@@ -24,8 +24,8 @@ class unregistered_thread : public std::exception
 
 //--------------------------------------------------------------------------------------------------
 
-Scheduler::Scheduler()
-: mLocVars(std::make_unique<LocalVars>())
+Scheduler::Scheduler(unsigned int nr_threads, const schedule_t& schedule, const std::string& selection_strategy)
+: mLocVars(std::make_unique<LocalVars>(nr_threads, schedule))
 , mPool()
 , mControl()
 , mThreads()
@@ -34,8 +34,7 @@ Scheduler::Scheduler()
 , mRegCond()
 , mStatus(Execution::Status::RUNNING)
 , mStatusMutex()
-, mSettings(SchedulerSettings::read_from_file("schedules/settings.txt"))
-, mSelector(selector_factory(mSettings.strategy_tag()))
+, mSelector(selector_factory(selection_strategy))
 , mThread([this] { return run(); })
 {
    DEBUGNL("Starting Scheduler");
@@ -376,26 +375,15 @@ void Scheduler::dump_data_races() const
 
 // Class Scheduler::LocalVars
 
-Scheduler::LocalVars::LocalVars()
-: mNrThreads(0)
-, mSchedule()
+Scheduler::LocalVars::LocalVars(const unsigned int nr_threads, const schedule_t& schedule)
+: mNrThreads(nr_threads)
+, mSchedule(schedule)
 , mTaskNr(0)
-{
-   if (!utils::io::read_from_file("schedules/schedule.txt", mSchedule))
-   {
-      ERROR("Scheduler::LocalVars()", "reading schedules/schedule.txt");
-      mSchedule = {};
-   }
-   if (!utils::io::read_from_file("schedules/threads.txt", mNrThreads))
-   {
-      ERROR("Scheduler::LocalVars()", "reading schedules/threads.txt");
-      // #todo Handle such an error
-   }
-}
+{}
 
 //--------------------------------------------------------------------------------------------------
 
-int Scheduler::LocalVars::nr_threads() const
+unsigned int Scheduler::LocalVars::nr_threads() const
 {
    return mNrThreads;
 }
@@ -425,12 +413,28 @@ void Scheduler::LocalVars::increase_task_nr()
 
 } // end namespace scheduler
 
+
+//--------------------------------------------------------------------------------------------------
+
+void wrapper_create_scheduler(int argc, char* argv[])
+{
+   if (argc < 4)
+      return;
+   const unsigned int nr_threads = atoi(argv[1]);
+   scheduler::schedule_t schedule;
+   std::stringstream stream(argv[2]);
+   stream >> schedule;
+   const std::string selection_strategy = argv[3];
+   the_scheduler = std::make_unique<scheduler::Scheduler>(nr_threads, schedule, selection_strategy);
+}
+
 //--------------------------------------------------------------------------------------------------
 
 int wrapper_spawn_thread(pthread_t* pid, const pthread_attr_t* attr, void* (*start_routine)(void*),
                          void* args)
 {
-   return the_scheduler.spawn_thread(pid, nullptr, start_routine, args);
+   assert(the_scheduler != nullptr);
+   return the_scheduler->spawn_thread(pid, nullptr, start_routine, args);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -438,8 +442,9 @@ int wrapper_spawn_thread(pthread_t* pid, const pthread_attr_t* attr, void* (*sta
 void wrapper_post_memory_instruction(int operation, void* operand, bool is_atomic,
                                      const char* file_name, unsigned int line_number)
 {
-   the_scheduler.post_memory_instruction(operation, program_model::Object(operand), is_atomic,
-                                         file_name, line_number);
+   assert(the_scheduler != nullptr);
+   the_scheduler->post_memory_instruction(operation, program_model::Object(operand), is_atomic,
+                                          file_name, line_number);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -447,15 +452,17 @@ void wrapper_post_memory_instruction(int operation, void* operand, bool is_atomi
 void wrapper_post_lock_instruction(int operation, void* operand, const char* file_name,
                                    unsigned int line_number)
 {
-   the_scheduler.post_lock_instruction(operation, program_model::Object(operand), file_name,
-                                       line_number);
+   assert(the_scheduler != nullptr);
+   the_scheduler->post_lock_instruction(operation, program_model::Object(operand), file_name,
+                                        line_number);
 }
 
 //--------------------------------------------------------------------------------------------------
 
 void wrapper_finish()
 {
-   the_scheduler.finish();
+   assert(the_scheduler != nullptr);
+   the_scheduler->finish();
 }
 
 //--------------------------------------------------------------------------------------------------
