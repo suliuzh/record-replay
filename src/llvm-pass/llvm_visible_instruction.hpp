@@ -17,6 +17,7 @@
 
 
 namespace llvm {
+class AliasSetTracker;
 class Instruction;
 class Module;
 class Value;
@@ -86,6 +87,8 @@ struct creator : public llvm::InstVisitor<creator, boost::optional<visible_instr
 {
    using return_type = boost::optional<visible_instruction_t>;
 
+   creator(llvm::AliasSetTracker& alias_set_tracker);
+   
    // Potential Visible Instructions
    return_type visitLoadInst(llvm::LoadInst& instr) const;
    return_type visitStoreInst(llvm::StoreInst& instr) const;
@@ -100,6 +103,8 @@ private:
    return_type handle_call_and_invoke_instr(
       llvm::Instruction& instr, const llvm::Function* callee,
       const llvm::iterator_range<llvm::User::const_op_iterator>& arg_operands) const;
+      
+    llvm::AliasSetTracker& m_alias_set_tracker;
 
 }; // end struct creator
 

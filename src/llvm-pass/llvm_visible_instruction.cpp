@@ -8,6 +8,9 @@
 
 #include "color_output.hpp"
 
+#include <llvm/Analysis/AliasSetTracker.h>
+
+#include <llvm/Analysis/AliasSetTracker.h>
 #include <llvm/IR/DebugInfoMetadata.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/Support/raw_ostream.h>
@@ -220,6 +223,13 @@ creator::return_type create(llvm::Instruction& instruction,
 
 using memory_operation = program_model::memory_operation;
 using lock_operation = program_model::lock_operation;
+
+//--------------------------------------------------------------------------------------------------
+
+creator::creator(llvm::AliasSetTracker& alias_set_tracker)
+: m_alias_set_tracker(alias_set_tracker)
+{
+}
 
 //--------------------------------------------------------------------------------------------------
 

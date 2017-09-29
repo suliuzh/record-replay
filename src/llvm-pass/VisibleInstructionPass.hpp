@@ -2,6 +2,7 @@
 
 #include "llvm_visible_instruction.hpp"
 
+#include "llvm/IR/PassManager.h"
 #include <llvm/IR/InstIterator.h>
 #include <llvm/Pass.h>
 
@@ -36,12 +37,14 @@ public:
 protected:
    unsigned int m_nr_instrumented;
 
-private:
+private:    
    bool runOnModule(llvm::Module& module) override;
+   void getAnalysisUsage(llvm::AnalysisUsage& analysis_usage) const override;
+   
    bool runOnFunction(llvm::Module& module, llvm::Function& function);
 
    virtual bool isBlackListed(const llvm::Function& function) const;
-
+   
    /// @brief The number of visible instructions encountered during the pass.
    unsigned int m_nr_visible_instructions;
 
