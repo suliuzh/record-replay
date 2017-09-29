@@ -87,19 +87,19 @@ struct creator : public llvm::InstVisitor<creator, boost::optional<visible_instr
    using return_type = boost::optional<visible_instruction_t>;
 
    // Potential Visible Instructions
-   return_type visitLoadInst(llvm::LoadInst& instr);
-   return_type visitStoreInst(llvm::StoreInst& instr);
-   return_type visitAtomicRMWInst(llvm::AtomicRMWInst& instr);
-   return_type visitCallInst(llvm::CallInst& instr);
-   return_type visitInvokeInst(llvm::InvokeInst& instr);
+   return_type visitLoadInst(llvm::LoadInst& instr) const;
+   return_type visitStoreInst(llvm::StoreInst& instr) const;
+   return_type visitAtomicRMWInst(llvm::AtomicRMWInst& instr) const;
+   return_type visitCallInst(llvm::CallInst& instr) const;
+   return_type visitInvokeInst(llvm::InvokeInst& instr) const;
 
    // Default
-   return_type visitInstruction(llvm::Instruction& instr);
+   return_type visitInstruction(llvm::Instruction& instr) const;
 
 private:
    return_type handle_call_and_invoke_instr(
       llvm::Instruction& instr, const llvm::Function* callee,
-      const llvm::iterator_range<llvm::User::const_op_iterator>& arg_operands);
+      const llvm::iterator_range<llvm::User::const_op_iterator>& arg_operands) const;
 
 }; // end struct creator
 

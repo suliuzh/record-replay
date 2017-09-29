@@ -223,7 +223,7 @@ using lock_operation = program_model::lock_operation;
 
 //--------------------------------------------------------------------------------------------------
 
-auto creator::visitLoadInst(llvm::LoadInst& instr) -> return_type
+auto creator::visitLoadInst(llvm::LoadInst& instr) const -> return_type
 {
    return create<memory_instruction>(instr, memory_operation::Load, instr.getPointerOperand(),
                                      instr.isAtomic());
@@ -231,7 +231,7 @@ auto creator::visitLoadInst(llvm::LoadInst& instr) -> return_type
 
 //--------------------------------------------------------------------------------------------------
 
-auto creator::visitStoreInst(llvm::StoreInst& instr) -> return_type
+auto creator::visitStoreInst(llvm::StoreInst& instr) const -> return_type
 {
    return create<memory_instruction>(instr, memory_operation::Store, instr.getPointerOperand(),
                                      instr.isAtomic());
@@ -239,7 +239,7 @@ auto creator::visitStoreInst(llvm::StoreInst& instr) -> return_type
 
 //--------------------------------------------------------------------------------------------------
 
-auto creator::visitAtomicRMWInst(llvm::AtomicRMWInst& instr) -> return_type
+auto creator::visitAtomicRMWInst(llvm::AtomicRMWInst& instr) const -> return_type
 {
    assert(instr.isAtomic());
    return create<memory_instruction>(instr, memory_operation::ReadModifyWrite,
@@ -248,21 +248,21 @@ auto creator::visitAtomicRMWInst(llvm::AtomicRMWInst& instr) -> return_type
 
 //--------------------------------------------------------------------------------------------------
 
-auto creator::visitCallInst(llvm::CallInst& instr) -> return_type
+auto creator::visitCallInst(llvm::CallInst& instr) const -> return_type
 {
    return handle_call_and_invoke_instr(instr, instr.getCalledFunction(), instr.arg_operands());
 }
 
 //--------------------------------------------------------------------------------------------------
 
-auto creator::visitInvokeInst(llvm::InvokeInst& instr) -> return_type
+auto creator::visitInvokeInst(llvm::InvokeInst& instr) const -> return_type
 {
    return handle_call_and_invoke_instr(instr, instr.getCalledFunction(), instr.arg_operands());
 }
 
 //--------------------------------------------------------------------------------------------------
 
-auto creator::visitInstruction(llvm::Instruction& instr) -> return_type
+auto creator::visitInstruction(llvm::Instruction& instr) const -> return_type
 {
    return return_type();
 }
@@ -271,7 +271,7 @@ auto creator::visitInstruction(llvm::Instruction& instr) -> return_type
 
 auto creator::handle_call_and_invoke_instr(
    llvm::Instruction& instr, const llvm::Function* callee,
-   const llvm::iterator_range<llvm::User::const_op_iterator>& arg_operands) -> return_type
+   const llvm::iterator_range<llvm::User::const_op_iterator>& arg_operands) const -> return_type
 {
    // Direct function invocation
    if (callee)
