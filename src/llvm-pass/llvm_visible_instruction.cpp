@@ -96,11 +96,13 @@ auto wrap::construct_arguments(const memory_instruction& instruction) -> argumen
    Value* arg_operation = ConstantInt::get(
       m_module.getContext(), APInt(32, static_cast<int>(instruction.operation()), false));
    Value* arg_operand = construct_operand(instruction.operand());
+   Value* arg_operand_name = construct_operand_name(instruction.operand());
    Value* arg_is_atomic =
       ConstantInt::get(m_module.getContext(), APInt(8, (instruction.is_atomic() ? 1 : 0), false));
    Value* arg_file_name = construct_file_name(instruction.meta_data().file_name);
    Value* arg_line_number = construct_line_number(instruction.meta_data().line_number);
-   return {arg_operation, arg_operand, arg_is_atomic, arg_file_name, arg_line_number};
+   return {arg_operation, arg_operand,   arg_operand_name,
+           arg_is_atomic, arg_file_name, arg_line_number};
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -111,9 +113,10 @@ auto wrap::construct_arguments(const lock_instruction& instruction) -> arguments
    Value* arg_operation = ConstantInt::get(
       m_module.getContext(), APInt(32, static_cast<int>(instruction.operation()), false));
    Value* arg_operand = construct_operand(instruction.operand());
+   Value* arg_operand_name = construct_operand_name(instruction.operand());
    Value* arg_file_name = construct_file_name(instruction.meta_data().file_name);
    Value* arg_line_number = construct_line_number(instruction.meta_data().line_number);
-   return {arg_operation, arg_operand, arg_file_name, arg_line_number};
+   return {arg_operation, arg_operand, arg_operand_name, arg_file_name, arg_line_number};
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -128,10 +131,70 @@ auto wrap::construct_arguments(const thread_management_instruction& instruction)
 
 //--------------------------------------------------------------------------------------------------
 
-llvm::Value* wrap::construct_operand(const operand_t& operand)
+llvm::Value* wrap::construct_operand(const memory_location_t& operand)
 {
    llvm::IRBuilder<> builder(&*m_instruction_it);
    return builder.CreatePointerCast(operand, builder.getInt8PtrTy());
+}
+
+//--------------------------------------------------------------------------------------------------
+
+llvm::Value* wrap::construct_operand_name(llvm::Value* name,
+                                          const std::vector<llvm::Value*>& indices_data,
+                                          llvm::Instruction& before)
+{
+   llvm::IRBuilder<> builder(&before);
+   auto* indices = instrumentation_utils::create_c_int64_array(indices_data, before, m_module);
+   auto* size = llvm::ConstantInt::get(builder.getInt64Ty(), indices_data.size(), false);
+   return builder.CreateCall(m_functions.Helper_create_operand_name(), {name, indices, size}, "");
+}
+
+//--------------------------------------------------------------------------------------------------
+
+llvm::Value* wrap::construct_operand_name(const memory_location_t& operand)
+{
+   llvm::IRBuilder<> builder(&*m_instruction_it);
+
+   if (const auto* gep = llvm::dyn_cast<llvm::GetElementPtrInst>(operand))
+   {
+      llvm::Value* name;
+      if (const auto* gep2 = llvm::dyn_cast<llvm::ConstantExpr>(gep->getPointerOperand()))
+      {
+         name = instrumentation_utils::get_or_create_global_string_ptr(
+            m_module, *m_instruction_it, "_mem_loc_name_" + gep2->getOperand(0)->getName().str(),
+            gep2->getOperand(0)->getName().str());
+      }
+      else
+      {
+         name = instrumentation_utils::get_or_create_global_string_ptr(
+            m_module, *m_instruction_it,
+            "_mem_loc_name_" + gep->getPointerOperand()->getName().str(),
+            gep->getPointerOperand()->getName().str());
+      }
+
+      std::vector<llvm::Value*> indices;
+      for (auto index = gep->idx_begin(); index != gep->idx_end(); ++index)
+      {
+         indices.push_back(index->get());
+      }
+      return construct_operand_name(name, indices, *m_instruction_it);
+   }
+
+   else if (auto* const_expr = llvm::dyn_cast<llvm::ConstantExpr>(operand))
+   {
+      if (const_expr->isGEPWithNoNotionalOverIndexing())
+      {
+         auto name = instrumentation_utils::get_or_create_global_string_ptr(
+            m_module, *m_instruction_it,
+            "_mem_loc_name_" + const_expr->getOperand(0)->getName().str(),
+            const_expr->getOperand(0)->getName().str());
+         std::vector<llvm::Value*> indices{const_expr->getOperand(1), const_expr->getOperand(2)};
+         return construct_operand_name(name, indices, *m_instruction_it);
+      }
+   }
+   std::string global_name = "_mem_loc_name_" + operand->getName().str();
+   return instrumentation_utils::get_or_create_global_string_ptr(
+      m_module, *m_instruction_it, global_name, operand->getName().str());
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -149,21 +212,6 @@ llvm::Value* wrap::construct_line_number(unsigned int line_number)
 {
    return llvm::ConstantInt::get(m_module.getContext(), llvm::APInt(32, line_number, false));
 }
-
-//--------------------------------------------------------------------------------------------------
-
-
-namespace {
-
-template <typename operation_t>
-void dump_base(const visible_instruction<operation_t>& instruction)
-{
-   using namespace utils::io;
-   llvm::errs() << text_color(to_string(instruction.operation()), Color::GREEN) << "\n";
-   instruction.operand()->dump();
-}
-
-} // end namespace
 
 //--------------------------------------------------------------------------------------------------
 

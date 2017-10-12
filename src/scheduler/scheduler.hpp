@@ -204,14 +204,17 @@ void wrapper_post_pthread_join_instruction(pthread_t, const char* file_name,
 void wrapper_post_stdthread_join_instruction(std::thread*, const char* file_name,
                                              unsigned int line_number);
 
-void wrapper_post_memory_instruction(int operation, void* operand, bool is_atomic,
-                                     const char* file_name, unsigned int line_number);
+void wrapper_post_memory_instruction(int operation, void* operand, const char* operand_name,
+                                     bool is_atomic, const char* file_name,
+                                     unsigned int line_number);
 
-void wrapper_post_lock_instruction(int operation, void* operand, const char* file_name,
-                                   unsigned int line_number);
+void wrapper_post_lock_instruction(int operation, void* operand, const char* operand_name,
+                                   const char* file_name, unsigned int line_number);
 
 void wrapper_enter_function(const char* function_name);
 
 void wrapper_exit_function(const char* function_name);
+
+const char* helper_create_operand_name(const char* base, int64_t* indices, int64_t size);
 
 } // end extern "C"

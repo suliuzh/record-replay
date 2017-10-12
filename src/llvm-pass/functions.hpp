@@ -41,6 +41,7 @@ public:
    llvm::Function* Wrapper_register_thread() const;
    llvm::Function* Wrapper_enter_function() const;
    llvm::Function* Wrapper_exit_function() const;
+   llvm::Function* Helper_create_operand_name() const;
 
    llvm::Function* Function_pthread_create() const;
 

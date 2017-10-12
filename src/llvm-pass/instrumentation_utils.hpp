@@ -17,6 +17,7 @@ class CallInst;
 class Function;
 class Instruction;
 class Module;
+class Type;
 class Value;
 } // end namespace llvm
 
@@ -26,6 +27,12 @@ namespace instrumentation_utils {
 llvm::Value* get_or_create_global_string_ptr(llvm::Module& module, llvm::Instruction& before,
                                              const std::string& variable_name,
                                              const std::string& str);
+
+/// @brief Allocates a c array of the given value type, fills it with the given data and returns
+/// the base pointer to it.
+
+llvm::Value* create_c_int64_array(const std::vector<llvm::Value*>& data, llvm::Instruction& before,
+                                  llvm::Module& module);
 
 /// @brief Add a call to callee at the beginning of function F.
 

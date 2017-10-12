@@ -94,7 +94,8 @@ void Functions::initialize(llvm::Module& module)
    // wrapper_post_lock_instruction
    {
       auto* type = FunctionType::get(
-         void_type, {builder.getInt32Ty(), void_ptr_type, type_char_ptr, builder.getInt32Ty()},
+         void_type,
+         {builder.getInt32Ty(), void_ptr_type, type_char_ptr, type_char_ptr, builder.getInt32Ty()},
          false);
       add_wrapper_prototype(module, "wrapper_post_lock_instruction", type, attributes);
    }
@@ -102,8 +103,8 @@ void Functions::initialize(llvm::Module& module)
    // wrapper_post_memory_instruction
    {
       auto* type = FunctionType::get(void_type,
-                                     {builder.getInt32Ty(), void_ptr_type, builder.getInt8Ty(),
-                                      type_char_ptr, builder.getInt32Ty()},
+                                     {builder.getInt32Ty(), void_ptr_type, type_char_ptr,
+                                      builder.getInt8Ty(), type_char_ptr, builder.getInt32Ty()},
                                      false);
       add_wrapper_prototype(module, "wrapper_post_memory_instruction", type, attributes);
    }
@@ -118,6 +119,14 @@ void Functions::initialize(llvm::Module& module)
    {
       auto* type = FunctionType::get(void_type, {type_char_ptr}, false);
       add_wrapper_prototype(module, "wrapper_exit_function", type, attributes);
+   }
+
+   // helper_create_operand_name
+   {
+      auto* type = FunctionType::get(
+         type_char_ptr, {type_char_ptr, builder.getInt64Ty()->getPointerTo(), builder.getInt64Ty()},
+         false);
+      add_wrapper_prototype(module, "helper_create_operand_name", type, attributes);
    }
 
    register_c_function(module, "pthread_create");
@@ -195,6 +204,13 @@ llvm::Function* Functions::Wrapper_enter_function() const
 llvm::Function* Functions::Wrapper_exit_function() const
 {
    return m_wrappers.find("wrapper_exit_function")->second;
+}
+
+//-----------------------------------------------------------------------------------------------
+
+llvm::Function* Functions::Helper_create_operand_name() const
+{
+   return m_wrappers.find("helper_create_operand_name")->second;
 }
 
 //-----------------------------------------------------------------------------------------------

@@ -27,6 +27,49 @@ llvm::Value* get_or_create_global_string_ptr(llvm::Module& module, llvm::Instruc
 
 //--------------------------------------------------------------------------------------------------
 
+namespace detail {
+void fill_c_int64_array(llvm::Value* array, const std::vector<llvm::Value*>& data,
+                        llvm::Instruction& before, llvm::ConstantInt* zero)
+{
+   llvm::IRBuilder<> builder(&before);
+   unsigned int i = 0;
+   for (auto* value : data)
+   {
+      auto* index = llvm::ConstantInt::get(builder.getInt32Ty(), i, false);
+      auto* index_ptr = builder.CreateGEP(array, {zero, index}, "");
+
+      if (value->getType() == builder.getInt64Ty())
+      {
+         auto* store = builder.CreateStore(value, index_ptr);
+      }
+      else
+      {
+         auto* cast = builder.CreateIntCast(value, builder.getInt64Ty(), true);
+         auto* store = builder.CreateStore(cast, index_ptr);
+      }
+      ++i;
+   }
+}
+} // end namespace detail
+
+//--------------------------------------------------------------------------------------------------
+
+llvm::Value* create_c_int64_array(const std::vector<llvm::Value*>& data, llvm::Instruction& before,
+                                  llvm::Module& module)
+{
+   llvm::IRBuilder<> builder(&before);
+   auto* array_type = llvm::ArrayType::get(builder.getInt64Ty(), data.size());
+   auto* array = new llvm::AllocaInst(array_type, "", &before);
+
+   llvm::ConstantInt* zero =
+      llvm::ConstantInt::get(module.getContext(), llvm::APInt(64, llvm::StringRef("0"), 10));
+
+   detail::fill_c_int64_array(array, data, before, zero);
+   return builder.CreateGEP(array, {zero, zero}, "");
+}
+
+//--------------------------------------------------------------------------------------------------
+
 llvm::CallInst* add_call_begin(llvm::Function* F, llvm::Function* callee,
                                const llvm::ArrayRef<llvm::Value*>& args,
                                const std::string& call_name)

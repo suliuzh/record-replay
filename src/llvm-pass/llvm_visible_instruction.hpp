@@ -34,22 +34,23 @@ class Functions;
 
 // Type definitions
 using thread_id_t = llvm::Value*;
-using operand_t = llvm::Value*;
+using memory_location_t = llvm::Value*;
 using thread_t = llvm::Value*;
 
-template <typename operation_t>
+template <typename operation_t, typename operand_t>
 using visible_instruction =
    program_model::detail::visible_instruction<thread_id_t, operation_t, operand_t>;
 
-using memory_instruction = program_model::detail::memory_instruction<thread_id_t, operand_t>;
+using memory_instruction =
+   program_model::detail::memory_instruction<thread_id_t, memory_location_t>;
 
-using lock_instruction = program_model::detail::lock_instruction<thread_id_t, operand_t>;
+using lock_instruction = program_model::detail::lock_instruction<thread_id_t, memory_location_t>;
 
 using thread_management_instruction =
    program_model::detail::thread_management_instruction<thread_id_t, thread_t>;
 
 using visible_instruction_t =
-   program_model::detail::visible_instruction_t<thread_id_t, operand_t, thread_t>;
+   program_model::detail::visible_instruction_t<thread_id_t, memory_location_t, thread_t>;
 
 //--------------------------------------------------------------------------------------------------
 
@@ -68,7 +69,11 @@ private:
    arguments_t construct_arguments(const lock_instruction& instruction);
    arguments_t construct_arguments(const thread_management_instruction& instruction);
 
-   llvm::Value* construct_operand(const operand_t& operand);
+   llvm::Value* construct_operand(const memory_location_t& operand);
+   llvm::Value* construct_operand_name(llvm::Value* name,
+                                       const std::vector<llvm::Value*>& indices_data,
+                                       llvm::Instruction& before);
+   llvm::Value* construct_operand_name(const memory_location_t& operand);
    llvm::Value* construct_file_name(const std::string& file_name);
    llvm::Value* construct_line_number(unsigned int line_number);
 

@@ -15,11 +15,12 @@ class Object
 {
 public:
    using ptr_t = void*;
+   using name_t = std::string;
 
    /// @brief Constructor.
    /// @note Default arguments construct dummy Object.
 
-   Object(ptr_t address = nullptr);
+   Object(ptr_t address = nullptr, const name_t& name = "");
 
    bool operator==(const Object&) const;
 
@@ -29,6 +30,7 @@ public:
 
 private:
    ptr_t m_address;
+   name_t m_name;
 
    friend std::ostream& operator<<(std::ostream& os, const Object& obj);
    friend std::istream& operator>>(std::istream&, Object&);

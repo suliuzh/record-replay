@@ -6,8 +6,9 @@ namespace program_model {
 
 //--------------------------------------------------------------------------------------------------
 
-Object::Object(ptr_t address)
+Object::Object(ptr_t address, const name_t& name)
 : m_address(address)
+, m_name(name)
 {
 }
 

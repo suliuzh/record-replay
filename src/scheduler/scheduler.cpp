@@ -586,20 +586,21 @@ void wrapper_post_stdthread_join_instruction(std::thread* thr, const char* file_
 
 //--------------------------------------------------------------------------------------------------
 
-void wrapper_post_memory_instruction(int operation, void* operand, bool is_atomic,
-                                     const char* file_name, unsigned int line_number)
+void wrapper_post_memory_instruction(int operation, void* operand, const char* operand_name,
+                                     bool is_atomic, const char* file_name,
+                                     unsigned int line_number)
 {
-   the_scheduler.post_memory_instruction(operation, program_model::Object(operand), is_atomic,
-                                         file_name, line_number);
+   the_scheduler.post_memory_instruction(operation, program_model::Object(operand, operand_name),
+                                         is_atomic, file_name, line_number);
 }
 
 //--------------------------------------------------------------------------------------------------
 
-void wrapper_post_lock_instruction(int operation, void* operand, const char* file_name,
-                                   unsigned int line_number)
+void wrapper_post_lock_instruction(int operation, void* operand, const char* operand_name,
+                                   const char* file_name, unsigned int line_number)
 {
-   the_scheduler.post_lock_instruction(operation, program_model::Object(operand), file_name,
-                                       line_number);
+   the_scheduler.post_lock_instruction(operation, program_model::Object(operand, operand_name),
+                                       file_name, line_number);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -614,6 +615,18 @@ void wrapper_enter_function(const char* function_name)
 void wrapper_exit_function(const char* function_name)
 {
    the_scheduler.exit_function(function_name);
+}
+
+//--------------------------------------------------------------------------------------------------
+
+const char* helper_create_operand_name(const char* base, int64_t* indices, int64_t size)
+{
+   auto name = std::string(base);
+   for (int i = 0; i < size; ++i)
+   {
+      name += "[" + std::to_string(indices[i]) + "]";
+   }
+   return name.c_str();
 }
 
 //--------------------------------------------------------------------------------------------------
