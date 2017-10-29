@@ -123,6 +123,10 @@ void Scheduler::post_join_instruction(pthread_t pid, const std::string& file_nam
                                                              program_model::Thread(tid_joined),
                                                              {file_name, line_number});
       });
+
+      // join instruction is performed
+      // deregister the joined thread
+      deregister_thread(pid);
    }
    catch (const unregistered_thread&)
    {
@@ -213,6 +217,20 @@ Thread::tid_t Scheduler::get_fresh_tid(const std::lock_guard<std::mutex>& regist
    const Thread::tid_t tid = mNrRegistered;
    ++mNrRegistered;
    return tid;
+}
+
+//--------------------------------------------------------------------------------------------------
+
+void Scheduler::deregister_thread(const pthread_t pid)
+{
+   DEBUGF_SYNC(thread_str(pthread_self()), "deregister_thread", pid, "\n");
+   std::lock_guard<std::mutex> lock(mRegMutex);
+
+   const auto it = mThreads.find(pid);
+   if (it == mThreads.end())
+      throw unregistered_thread();
+
+   mThreads.erase(it);
 }
 
 //--------------------------------------------------------------------------------------------------

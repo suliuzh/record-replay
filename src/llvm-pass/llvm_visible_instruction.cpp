@@ -296,6 +296,10 @@ auto creator::handle_call_and_invoke_instr(
       {
          return create<lock_instruction>(instr, lock_operation::Unlock, *arg_operands.begin());
       }
+      else if (callee->getName() == "pthread_mutex_trylock")
+      {
+         return create<lock_instruction>(instr, lock_operation::Trylock, *arg_operands.begin());
+      }
    }
    /// @todo Case of indirect function invokation
    /// @todo Include pthread_exit as visible instruction?

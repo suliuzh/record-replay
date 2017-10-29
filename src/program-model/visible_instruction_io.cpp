@@ -70,6 +70,9 @@ std::ostream& operator<<(std::ostream& os, const lock_operation& operation)
       case lock_operation::Unlock:
          os << "Unlock";
          break;
+      case lock_operation::Trylock:
+         os << "Trylock";
+         break;
    }
    return os;
 }
@@ -84,6 +87,8 @@ std::istream& operator>>(std::istream& is, lock_operation& operation)
       operation = lock_operation::Lock;
    else if (str == "Unlock")
       operation = lock_operation::Unlock;
+   else if (str == "Trylock")
+      operation = lock_operation::Trylock;
    else
       is.setstate(std::ios::failbit);
    return is;
