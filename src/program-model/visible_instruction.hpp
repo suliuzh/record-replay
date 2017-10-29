@@ -79,7 +79,7 @@ enum class memory_operation
 {
    Load = 0,
    Store = 1,
-   ReadModifyWrite = 5
+   ReadModifyWrite = 3
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -124,9 +124,15 @@ private:
 
 enum class lock_operation
 {
+<<<<<<< HEAD
    Lock = 3,
    Unlock = 2,
    Trylock = 9
+=======
+   Lock = 0,
+   Unlock = 1,
+   Trylock = 2
+>>>>>>> feature/try_lock
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -163,8 +169,8 @@ public:
 
 enum class thread_management_operation
 {
-   Spawn = 6,
-   Join = 7
+   Spawn = 0,
+   Join = 1
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -213,18 +219,6 @@ struct get_tid : public boost::static_visitor<thread_id_t>
    }
 }; // end struct get_tid
 
-
-//--------------------------------------------------------------------------------------------------
-
-template <typename thread_id_t, typename memory_location_t, typename thread_t>
-struct operation_as_int : public boost::static_visitor<int>
-{
-   template <typename operation_t, typename operand_t>
-   int operator()(const visible_instruction<thread_id_t, operation_t, operand_t>& instruction) const
-   {
-      return static_cast<int>(instruction.operation());
-   }
-}; // end struct operation_as_int
 
 //--------------------------------------------------------------------------------------------------
 
@@ -310,7 +304,6 @@ using thread_management_instruction = detail::thread_management_instruction<Thre
 using visible_instruction_t = detail::visible_instruction_t<Thread::tid_t, Object, Thread>;
 
 using get_tid = detail::get_tid<Thread::tid_t, Object, Thread>;
-using operation_as_int = detail::operation_as_int<Thread::tid_t, Object, Thread>;
 using get_operand = detail::get_operand<Thread::tid_t, Object, Thread>;
 using get_meta_data = detail::get_meta_data<Thread::tid_t, Object, Thread>;
 

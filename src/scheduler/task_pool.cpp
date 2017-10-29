@@ -52,7 +52,9 @@ void TaskPool::yield(const Thread::tid_t& tid)
    std::lock_guard<std::mutex> guard(mMutex);
    if (mCurrentTask && boost::apply_visitor(program_model::get_tid(), *mCurrentTask) == tid)
    {
-      DEBUGF_SYNC("Taskpool", "yield", tid, "\n");
+      DEBUGF_SYNC("Taskpool", "yield",
+                  boost::apply_visitor(program_model::instruction_to_short_string(), *mCurrentTask),
+                  "\n");
       update_object_yield(*mCurrentTask);
    }
 }
@@ -62,18 +64,20 @@ void TaskPool::yield(const Thread::tid_t& tid)
 void TaskPool::finish(const program_model::Thread::tid_t& tid)
 {
    std::lock_guard<std::mutex> lock(m_objects_mutex);
-   
+
    auto thread_state = m_thread_states.find(tid);
    if (thread_state == m_thread_states.end())
    {
       throw std::runtime_error("TaskPool::finish");
    }
-   
+
    std::for_each(thread_state->second.begin(), thread_state->second.end(),
-                 [this](const auto& join_request) { set_status(join_request.first, program_model::Thread::Status::ENABLED); });
-   
+                 [this](const auto& join_request) {
+                    set_status(join_request.first, program_model::Thread::Status::ENABLED);
+                 });
+
    set_status_protected(tid, program_model::Thread::Status::FINISHED);
-   
+
    // As soon as the thread is finished, potential waiters for a join are enabled and remain
    // enabled even after a potential join. Joining an unjoinable thread returns an error code.
 }
@@ -264,33 +268,58 @@ void TaskPool::set_status(const Thread::tid_t& tid, const Thread::Status& status
 
 void TaskPool::update_object_post(const Thread::tid_t& tid, const instruction_t& task)
 {
-   const auto operand = boost::apply_visitor(program_model::get_operand(), task);
    bool enabled = true;
-   if (const auto* mem_location = boost::get<program_model::Object>(&operand))
+
+   // lock instructions
+   if (const auto* lock_instr = boost::get<program_model::lock_instruction>(&task))
    {
-       const program_model::Object::ptr_t address = mem_location->address();
-       std::lock_guard<std::mutex> lock(m_objects_mutex);
-       // Create a new object if one with name does not exist in m_objects
-       if (m_objects.find(address) == m_objects.end())
-       {
-          m_objects.insert(objects_t::value_type(address, object_state(*mem_location)));
-       }
-       // Update m_data_races
-       auto& operand_state = m_objects.find(address)->second;
-       auto data_races = get_data_races(operand_state)(task);
-       std::move(data_races.begin(), data_races.end(), std::back_inserter(m_data_races));
-       // Update status of threads operating on same operand
-       enabled = operand_state.request(task);
+      const auto address = lock_instr->operand().address();
+      std::lock_guard<std::mutex> lock(m_objects_mutex);
+
+      // get or create item for address
+      auto it = m_lock_objects.find(address);
+      if (it == m_lock_objects.end())
+         it = m_lock_objects
+                 .insert(lock_objects_t::value_type(address, lock_object(lock_instr->operand())))
+                 .first;
+
+      enabled = it->second.request(*lock_instr);
    }
-   else if (const auto* management_instr = boost::get<program_model::thread_management_instruction>(&task))
+
+   // memory instructions
+   else if (const auto* memory_instr = boost::get<program_model::memory_instruction>(&task))
+   {
+      const auto address = memory_instr->operand().address();
+      std::lock_guard<std::mutex> lock(m_objects_mutex);
+
+      // get or create item for address
+      auto it = m_objects.find(address);
+      if (it == m_objects.end())
+         it =
+            m_objects.insert(objects_t::value_type(address, memory_object(memory_instr->operand())))
+               .first;
+
+      // update dataraces
+      auto data_races = get_data_races(it->second)(task);
+      std::move(data_races.begin(), data_races.end(), std::back_inserter(m_data_races));
+
+      enabled = it->second.request(*memory_instr);
+   }
+
+   // thread management instructions
+   else if (const auto* management_instr =
+               boost::get<program_model::thread_management_instruction>(&task))
    {
       if (management_instr->operation() == program_model::thread_management_operation::Join)
       {
          std::lock_guard<std::mutex> lock(m_objects_mutex);
-         auto& operand_state = m_thread_states.find(management_instr->operand().tid())->second;
-         enabled = operand_state.request(*management_instr);
+         auto it = m_thread_states.find(management_instr->operand().tid());
+         assert(it != m_thread_states.end());
+         enabled = it->second.request(*management_instr);
       }
    }
+
+   // update thread status
    set_status(tid, (enabled ? Thread::Status::ENABLED : Thread::Status::DISABLED));
 }
 
@@ -298,33 +327,33 @@ void TaskPool::update_object_post(const Thread::tid_t& tid, const instruction_t&
 
 void TaskPool::update_object_yield(const instruction_t& task)
 {
-   const auto operand = boost::apply_visitor(program_model::get_operand(), task);
-   if (const auto* mem_location = boost::get<program_model::Object>(&operand))
+   // lock instructions
+   if (const auto* lock_instr = boost::get<program_model::lock_instruction>(&task))
    {
-       const auto tid = boost::apply_visitor(program_model::get_tid(), task);
-       std::lock_guard<std::mutex> lock(m_objects_mutex);
-       auto obj = m_objects.find(mem_location->address());
-       /// @pre mLockObs.find(task.obj()) != mLockObs.end()
-       assert(obj != m_objects.end());
-       obj->second.perform(tid);
-       if (const auto* lock_instr = boost::get<program_model::lock_instruction>(&task))
-       {
-          const bool is_lock = lock_instr->operation() == program_model::lock_operation::Lock;
-          set_status_of_waiting_on(obj->second,
-                                   (is_lock ? Thread::Status::DISABLED : Thread::Status::ENABLED));
-       }
+      std::lock_guard<std::mutex> lock(m_objects_mutex);
+      auto it = m_lock_objects.find(lock_instr->operand().address());
+      assert(it != m_lock_objects.end());
+
+      const bool success = it->second.perform(*lock_instr);
+
+      // update status of threads waiting on tasks's lock_object operand
+      const bool did_lock =
+         (lock_instr->operation() != program_model::lock_operation::Unlock && success);
+      const auto status = did_lock ? Thread::Status::DISABLED : Thread::Status::ENABLED;
+      const auto waiting = it->second.waiting();
+      std::for_each(waiting.begin(), waiting.end(),
+                    [this, status](const auto tid) { set_status(tid, status); });
    }
-}
 
-//--------------------------------------------------------------------------------------------------
+   // memory instruction
+   else if (const auto* memory_instr = boost::get<program_model::memory_instruction>(&task))
+   {
+      std::lock_guard<std::mutex> lock(m_objects_mutex);
+      auto it = m_objects.find(memory_instr->operand().address());
+      assert(it != m_objects.end());
 
-void TaskPool::set_status_of_waiting_on(const object_state& object, const Thread::Status& status)
-{
-   DEBUGF_SYNC("TaskPool", "set_status_of_waiting_on", object.str() << ", " << to_string(status), "\n");
-   std::for_each(object.begin(0), object.end(0),
-                 [&status, this](const auto& request) { set_status(request.first, status); });
-   std::for_each(object.begin(1), object.end(1),
-                 [&status, this](const auto& request) { set_status(request.first, status); });
+      it->second.perform(*memory_instr);
+   }
 }
 
 //--------------------------------------------------------------------------------------------------

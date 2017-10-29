@@ -124,9 +124,16 @@ void Scheduler::post_join_instruction(pthread_t pid, const std::string& file_nam
                                                              {file_name, line_number});
       });
 
+<<<<<<< HEAD
       // join instruction is performed
       // deregister the joined thread
       deregister_thread(pid);
+=======
+      if (runs_controlled())
+         // join instruction is performed
+         // deregister the joined thread
+         deregister_thread(pid);
+>>>>>>> feature/try_lock
    }
    catch (const unregistered_thread&)
    {
@@ -150,6 +157,7 @@ void Scheduler::post_memory_instruction(const int op, const Object& obj, bool is
 void Scheduler::post_lock_instruction(const int op, const Object& obj, const std::string& file_name,
                                       unsigned int line_number)
 {
+   DEBUG_SYNC("DEBUG\t" << static_cast<lock_operation>(op) << "\n");
    post_task([op, &obj, &file_name, line_number](const auto tid) {
       return program_model::lock_instruction(tid, static_cast<lock_operation>(op), obj,
                                              {file_name, line_number});

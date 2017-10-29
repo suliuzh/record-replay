@@ -1,7 +1,8 @@
 #pragma once
 
 #include "concurrency_error.hpp"
-#include "object_state.hpp"
+#include "lock_object.hpp"
+#include "memory_object.hpp"
 #include "thread_state.hpp"
 
 #include "state.hpp"
@@ -20,14 +21,6 @@ using namespace program_model;
 
 namespace scheduler {
 
-/// TaskPool encapsulates
-/// - a map mThreads mapping Thread::tid_t's to a Thread object;
-/// - a map mTasks mapping Thread::tid_t's to the next instruction posted by the
-/// corresponding Thread.
-/// A TaskPool is equiped with a locking mechanism that allows threads to safely
-/// operate on its data concurrently.
-/// @note The TaskPool assumes that threads don't cheat and post under false id.
-
 class TaskPool
 {
 public:
@@ -36,7 +29,8 @@ public:
    using instruction_t = program_model::visible_instruction_t;
    using Tasks = std::unordered_map<Thread::tid_t, instruction_t>;
    using Threads = std::unordered_map<Thread::tid_t, Thread>;
-   using objects_t = std::unordered_map<object_t::ptr_t, object_state>;
+   using objects_t = std::unordered_map<object_t::ptr_t, memory_object>;
+   using lock_objects_t = std::unordered_map<object_t::ptr_t, lock_object>;
    using thread_states_t = std::unordered_map<Thread::tid_t, thread_state>;
 
    /// @brief Mytex protecting mTasks, mStatus, mNr_registered, and mModified.
@@ -72,9 +66,9 @@ public:
    /// @brief Handles a yield if tid is the currently executing Thread.
 
    void yield(const Thread::tid_t& tid);
-   
+
    /// @brief Handles a finished thread.
-   
+
    void finish(const Thread::tid_t& tid);
 
    /// @brief Wait until all unfinished threads have posted a task.
@@ -151,6 +145,7 @@ private:
 
    /// @brief Datastructure containing the objects operated on by the program.
 
+   lock_objects_t m_lock_objects;
    objects_t m_objects;
    thread_states_t m_thread_states;
 
@@ -173,10 +168,6 @@ private:
    void update_object_post(const Thread::tid_t& tid, const instruction_t& task);
 
    void update_object_yield(const instruction_t& task);
-
-   /// @brief Set the status of all Threads with lock requests on obj to the given one.
-
-   void set_status_of_waiting_on(const object_state& obj, const Thread::Status&);
 
    /// @brief Returns whether all registered threads are FINISHED.
 
