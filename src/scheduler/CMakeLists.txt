@@ -37,7 +37,8 @@ add_library(RecordReplayScheduler SHARED
   ${CPP_UTILS}/src/utils_io.cpp
   concurrency_error.cpp
   controllable_thread.cpp
-  object_state.cpp
+  lock_object.cpp
+  memory_object.cpp
   replay.cpp
   schedule.cpp
   scheduler_settings.cpp
