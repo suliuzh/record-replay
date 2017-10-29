@@ -124,16 +124,10 @@ void Scheduler::post_join_instruction(pthread_t pid, const std::string& file_nam
                                                              {file_name, line_number});
       });
 
-<<<<<<< HEAD
-      // join instruction is performed
-      // deregister the joined thread
-      deregister_thread(pid);
-=======
       if (runs_controlled())
          // join instruction is performed
          // deregister the joined thread
          deregister_thread(pid);
->>>>>>> feature/try_lock
    }
    catch (const unregistered_thread&)
    {

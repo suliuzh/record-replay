@@ -124,15 +124,9 @@ private:
 
 enum class lock_operation
 {
-<<<<<<< HEAD
-   Lock = 3,
-   Unlock = 2,
-   Trylock = 9
-=======
    Lock = 0,
    Unlock = 1,
    Trylock = 2
->>>>>>> feature/try_lock
 };
 
 //--------------------------------------------------------------------------------------------------
