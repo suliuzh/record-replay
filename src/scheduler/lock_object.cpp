@@ -57,11 +57,20 @@ bool lock_object::perform(const instruction_t& instruction)
    const auto result = m_waiting[index].erase(instruction.tid());
    assert(result == 1);
 
-   // update m_holder
+   bool success = true;
+
+   // update m_holder and success
    if (instruction.operation() == lock_operation::Lock)
    {
       assert(!m_holder);
       m_holder = instruction.tid();
+   }
+   else if (instruction.operation() == lock_operation::Trylock)
+   {
+      if (!m_holder)
+         m_holder = instruction.tid();
+      else
+         success = false;
    }
    else
    {
@@ -70,7 +79,7 @@ bool lock_object::perform(const instruction_t& instruction)
    }
 
    DEBUG_SYNC(*this << "\n");
-   return true;
+   return success;
 }
 
 //--------------------------------------------------------------------------------------------------

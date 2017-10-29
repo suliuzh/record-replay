@@ -105,6 +105,8 @@ private:
 
    Thread::tid_t get_fresh_tid(const std::lock_guard<std::mutex>& registration_lock);
 
+   void deregister_thread(const pthread_t pid);
+
    using create_instruction_t =
       std::function<program_model::visible_instruction_t(program_model::Thread::tid_t)>;
 
