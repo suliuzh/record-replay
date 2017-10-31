@@ -61,7 +61,7 @@ std::istream& operator>>(std::istream& is, Thread::Status& status)
 
 std::ostream& operator<<(std::ostream& os, const Thread& thread)
 {
-   os << thread.tid() << " " << thread.status();
+   os << thread.tid() << " " << thread.tid() << " " << thread.status();
    return os;
 }
 
@@ -69,7 +69,7 @@ std::ostream& operator<<(std::ostream& os, const Thread& thread)
 
 std::istream& operator>>(std::istream& is, Thread& thread)
 {
-    is >> thread.mTid >> thread.mStatus;
+    is >> thread.mTid >> thread.mTid >> thread.mStatus;
     return is;
 }
 

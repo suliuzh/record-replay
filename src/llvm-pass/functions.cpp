@@ -7,6 +7,8 @@
 #include <llvm/IR/Module.h>
 #include <llvm/Support/raw_ostream.h>
 
+#include <boost/range/adaptor/map.hpp>
+
 #include <exception>
 
 
@@ -28,6 +30,16 @@ void Functions::initialize(llvm::Module& module)
       "pthread_exit",
       "pthread_mutex_lock",
       "pthread_mutex_unlock",
+      // "_ZSt9terminatev",
+      // "_ZNSt3__120__throw_system_errorEiPKc",
+      // std::thread
+      // "_ZdlPv",
+      // "_ZNSt3__114",
+      // "_ZNSt3__115",
+      // "_ZNSt3__119__thread_local_dataEv",
+      // "_ZNSt3__16",
+      // "_ZNSt3__114__thread_proxyINS_5tupleIJNS_10unique_ptrINS_15__thread_structENS_14default_deleteIS3_EEEEM25",
+      // "_Znwm",
    };
 
    using namespace llvm;
@@ -241,8 +253,19 @@ llvm::Type* Functions::Type_stdthread() const
 
 bool Functions::blacklisted(const llvm::Function* function) const
 {
-   return m_c_functions.find(function->getName()) != m_c_functions.end() ||
-          m_black_listed.find(function->getName()) != m_black_listed.end();
+   const auto name_contains_substring_in_blacklist= [](const auto& blacklist, const auto& function_name)
+   {
+      return std::any_of(blacklist.begin(), blacklist.end(), [&function_name](const auto& entry)
+      {
+         return function_name.find(entry) != std::string::npos;
+      });
+   };
+   
+   return name_contains_substring_in_blacklist(m_c_functions | boost::adaptors::map_keys, function->getName().str()) ||
+      name_contains_substring_in_blacklist(m_black_listed, function->getName().str());
+   // 
+   // return m_c_functions.find(function->getName()) != m_c_functions.end() ||
+   //        m_black_listed.find(function->getName()) != m_black_listed.end();
 }
 
 //-----------------------------------------------------------------------------------------------

@@ -28,8 +28,24 @@ wrap::wrap(llvm::Module& module, Functions& functions, llvm::inst_iterator& inst
 
 //--------------------------------------------------------------------------------------------------
 
+bool is_blacklisted(const program_model::meta_data_t& meta_data)
+{
+   const static std::array<std::string, 4> std_lib = {{ 
+      "include/c++/v1/memory", 
+      "include/c++/v1/thread",
+      "include/c++/v1/tuple",
+      "include/c++/v1/type_traits"
+   }};
+   bool blacklisted = std::any_of(std_lib.begin(), std_lib.end(), [&meta_data](const auto& file_name) { return meta_data.file_name.find(file_name) != std::string::npos; });
+   if (blacklisted)
+      llvm::errs() << "blacklisted:\t" << meta_data.file_name << "\n";
+   return blacklisted;
+}
+
 void wrap::operator()(const memory_instruction& instruction)
 {
+   if (is_blacklisted(instruction.meta_data()))
+      return;
    auto arguments = construct_arguments(instruction);
    llvm::CallInst::Create(m_functions.Wrapper_post_memory_instruction(), arguments, "",
                           &*m_instruction_it);
@@ -39,6 +55,8 @@ void wrap::operator()(const memory_instruction& instruction)
 
 void wrap::operator()(const lock_instruction& instruction)
 {
+   if (is_blacklisted(instruction.meta_data()))
+      return;
    auto arguments = construct_arguments(instruction);
    llvm::CallInst::Create(m_functions.Wrapper_post_lock_instruction(), arguments, "",
                           &*m_instruction_it);
@@ -48,6 +66,8 @@ void wrap::operator()(const lock_instruction& instruction)
 
 void wrap::operator()(const thread_management_instruction& instruction)
 {
+   if (is_blacklisted(instruction.meta_data()))
+      return;
    assert(llvm::isa<llvm::CallInst>(&*m_instruction_it) ||
           llvm::isa<llvm::InvokeInst>(&*m_instruction_it));
 
