@@ -30,15 +30,14 @@ wrap::wrap(llvm::Module& module, Functions& functions, llvm::inst_iterator& inst
 
 bool is_blacklisted(const program_model::meta_data_t& meta_data)
 {
-   const static std::array<std::string, 4> std_lib = {{ 
+   const static std::array<std::string, 5> std_lib = {{ 
       "include/c++/v1/memory", 
       "include/c++/v1/thread",
       "include/c++/v1/tuple",
-      "include/c++/v1/type_traits"
+      "include/c++/v1/type_traits",
+      "include/c++/v1/__functional_base"
    }};
    bool blacklisted = std::any_of(std_lib.begin(), std_lib.end(), [&meta_data](const auto& file_name) { return meta_data.file_name.find(file_name) != std::string::npos; });
-   if (blacklisted)
-      llvm::errs() << "blacklisted:\t" << meta_data.file_name << "\n";
    return blacklisted;
 }
 
