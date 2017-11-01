@@ -66,7 +66,8 @@ INSTANTIATE_TEST_CASE_P(
    ::testing::Values(
       // InstrumentedProgramRunTestData{"real_world/filesystem.c", "0", ""},
       // InstrumentedProgramRunTestData{"real_world/dining_philosophers.c", "0", ""},
-      InstrumentedProgramRunTestData{"real_world/background_thread.cpp", "3", "-std=c++14"}//,
+        InstrumentedProgramRunTestData{"real_world/bank_account.cpp", "3", "-std=c++14"} //,
+    //   InstrumentedProgramRunTestData{"real_world/background_thread.cpp", "3", "-std=c++14"}//,
       // InstrumentedProgramRunTestData{"real_world/dining_philosophers.cpp", "0", "-std=c++14"},
       // InstrumentedProgramRunTestData{"real_world/work_stealing_queue.cpp", "0", "-std=c++14"} //
       ));

@@ -36,7 +36,7 @@ int main()
    mallory.join();
    marvin.join();
 
-   // assert(account1.load() >= 0 && account2.load() >= 0);
+   assert(account1.load() >= 0 && account2.load() >= 0);
 
    return 0;
 }
