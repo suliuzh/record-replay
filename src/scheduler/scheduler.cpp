@@ -197,6 +197,13 @@ void Scheduler::exit_function(const std::string& function_name)
 
 //--------------------------------------------------------------------------------------------------
 
+void Scheduler::notify_assertion_failure()
+{
+    // TODO:
+}
+
+//--------------------------------------------------------------------------------------------------
+
 void Scheduler::join()
 {
    if (mThread.joinable())
@@ -617,6 +624,13 @@ void wrapper_enter_function(const char* function_name)
 void wrapper_exit_function(const char* function_name)
 {
    the_scheduler.exit_function(function_name);
+}
+
+//--------------------------------------------------------------------------------------------------
+
+void wrapper_notify_assertion_failure()
+{
+    the_scheduler.notify_assertion_failure();
 }
 
 //--------------------------------------------------------------------------------------------------

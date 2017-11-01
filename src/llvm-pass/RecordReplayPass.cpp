@@ -6,6 +6,8 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 
+#include <boost/range/adaptor/filtered.hpp>
+
 
 namespace concurrency_passes {
 
@@ -85,6 +87,30 @@ void LightWeightPass::onEndOfPass(llvm::Module& module)
    if (auto* main = module.getFunction("main"))
    {
       instrumentation_utils::add_call_begin(main, mFunctions.Wrapper_register_main_thread(), {});
+   }
+   
+   // Instrument assertion failures
+   const auto get_all_callers = [](llvm::Function& function)
+   {
+       std::vector<llvm::Instruction*> callers;
+       for (auto* user : function.users())
+       {
+           if (llvm::isa<llvm::CallInst>(user) || llvm::isa<llvm::InvokeInst>(user))
+           {
+               callers.push_back(llvm::dyn_cast<llvm::Instruction>(user));
+           }
+       }
+       return callers;
+   };
+   
+   if (auto* assert_rtn = module.getFunction("__assert_rtn"))
+   {
+       const auto callers = get_all_callers(*assert_rtn);
+       for (auto* caller : callers)
+       {
+           llvm::IRBuilder<> builder(caller);
+           builder.CreateCall(mFunctions.Wrapper_notify_assertion_failure(), {}, "");
+       }
    }
 }
 

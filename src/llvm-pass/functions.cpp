@@ -132,6 +132,12 @@ void Functions::initialize(llvm::Module& module)
       auto* type = FunctionType::get(void_type, {type_char_ptr}, false);
       add_wrapper_prototype(module, "wrapper_exit_function", type, attributes);
    }
+   
+   // wrapper_assert
+   {
+      auto* type = FunctionType::get(void_type, {}, false);
+      add_wrapper_prototype(module, "wrapper_notify_assertion_failure", type, attributes);
+   }
 
    // helper_create_operand_name
    {
@@ -216,6 +222,13 @@ llvm::Function* Functions::Wrapper_enter_function() const
 llvm::Function* Functions::Wrapper_exit_function() const
 {
    return m_wrappers.find("wrapper_exit_function")->second;
+}
+
+//-----------------------------------------------------------------------------------------------
+
+llvm::Function* Functions::Wrapper_notify_assertion_failure() const
+{
+   return m_wrappers.find("wrapper_notify_assertion_failure")->second;
 }
 
 //-----------------------------------------------------------------------------------------------

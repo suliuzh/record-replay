@@ -67,6 +67,8 @@ public:
    void enter_function(const std::string& function_name);
 
    void exit_function(const std::string& function_name);
+   
+   void notify_assertion_failure();
 
    /// @brief Lets the main thread of the input program join the Scheduler thread.
 
@@ -214,6 +216,8 @@ void wrapper_post_lock_instruction(int operation, void* operand, const char* ope
 void wrapper_enter_function(const char* function_name);
 
 void wrapper_exit_function(const char* function_name);
+
+void wrapper_notify_assertion_failure();
 
 const char* helper_create_operand_name(const char* base, int64_t* indices, int64_t size);
 
