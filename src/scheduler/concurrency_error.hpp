@@ -5,6 +5,7 @@
 
 #include <exception>
 #include <iosfwd>
+#include <string>
 #include <vector>
 
 //--------------------------------------------------------------------------------------------------
@@ -40,5 +41,20 @@ private:
    deadlock_t m_deadlock;
 
 }; // end class deadlock_exception
+
+//--------------------------------------------------------------------------------------------------
+
+struct assertion_failure
+{
+    std::string assertion;
+    std::string file_name;
+    std::string function_name;
+    unsigned int line_number;
+
+}; // end struct assertion_failure
+
+std::ostream& operator<<(std::ostream& os, const assertion_failure&);
+
+//--------------------------------------------------------------------------------------------------
 
 } // end namespace scheduler

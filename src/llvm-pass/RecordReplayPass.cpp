@@ -5,6 +5,7 @@
 
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
+#include <llvm/Support/raw_ostream.h>
 
 #include <boost/range/adaptor/filtered.hpp>
 
@@ -108,8 +109,17 @@ void LightWeightPass::onEndOfPass(llvm::Module& module)
        const auto callers = get_all_callers(*assert_rtn);
        for (auto* caller : callers)
        {
+           std::vector<llvm::Value*> args;
+           if (auto* call = llvm::dyn_cast<llvm::CallInst>(caller))
+           {
+               args = { call->getArgOperand(0), call->getArgOperand(1), call->getArgOperand(2), call->getArgOperand(3) };
+           }
+           else if (auto* invoke = llvm::dyn_cast<llvm::InvokeInst>(caller))
+           {
+               args = { invoke->getArgOperand(0), invoke->getArgOperand(1), invoke->getArgOperand(2), invoke->getArgOperand(3) };
+           }
            llvm::IRBuilder<> builder(caller);
-           builder.CreateCall(mFunctions.Wrapper_notify_assertion_failure(), {}, "");
+           builder.CreateCall(mFunctions.Wrapper_notify_assertion_failure(), args, "");
        }
    }
 }

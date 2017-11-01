@@ -197,9 +197,9 @@ void Scheduler::exit_function(const std::string& function_name)
 
 //--------------------------------------------------------------------------------------------------
 
-void Scheduler::notify_assertion_failure()
+void Scheduler::notify_assertion_failure(const assertion_failure& error)
 {
-    // TODO:
+    std::cout << error << "\n";
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -628,9 +628,10 @@ void wrapper_exit_function(const char* function_name)
 
 //--------------------------------------------------------------------------------------------------
 
-void wrapper_notify_assertion_failure()
+void wrapper_notify_assertion_failure(const char* function_name, const char* file_name, 
+                                      unsigned int line_number, const char* assertion)
 {
-    the_scheduler.notify_assertion_failure();
+    the_scheduler.notify_assertion_failure({ assertion, file_name, function_name, line_number });
 }
 
 //--------------------------------------------------------------------------------------------------

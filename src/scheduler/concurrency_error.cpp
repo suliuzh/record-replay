@@ -53,4 +53,12 @@ const deadlock_t deadlock_exception::get() const
 
 //--------------------------------------------------------------------------------------------------
 
+std::ostream& operator<<(std::ostream& os, const assertion_failure& error)
+{
+    os  << "ASSERTION FAILURE"
+        << "\n\t" << error.assertion 
+        << "\n\t" << error.function_name << " " << error.file_name << " " << error.line_number;
+    return os;
+}
+
 } // end namespace scheduler

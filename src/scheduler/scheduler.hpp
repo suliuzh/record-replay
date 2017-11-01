@@ -68,7 +68,7 @@ public:
 
    void exit_function(const std::string& function_name);
    
-   void notify_assertion_failure();
+   void notify_assertion_failure(const assertion_failure& error);
 
    /// @brief Lets the main thread of the input program join the Scheduler thread.
 
@@ -217,7 +217,8 @@ void wrapper_enter_function(const char* function_name);
 
 void wrapper_exit_function(const char* function_name);
 
-void wrapper_notify_assertion_failure();
+void wrapper_notify_assertion_failure(const char* function_name, const char* file_name, 
+                                      unsigned int line_number, const char* assertion);
 
 const char* helper_create_operand_name(const char* base, int64_t* indices, int64_t size);
 

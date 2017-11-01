@@ -135,7 +135,7 @@ void Functions::initialize(llvm::Module& module)
    
    // wrapper_assert
    {
-      auto* type = FunctionType::get(void_type, {}, false);
+      auto* type = FunctionType::get(void_type, {type_char_ptr, type_char_ptr, builder.getInt32Ty(), type_char_ptr}, false);
       add_wrapper_prototype(module, "wrapper_notify_assertion_failure", type, attributes);
    }
 
