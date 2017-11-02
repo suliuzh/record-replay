@@ -1,5 +1,7 @@
 #pragma once
 
+#include <schedule.hpp>
+
 #include <boost/filesystem/path.hpp>
 #include <boost/preprocessor/stringize.hpp>
 
@@ -27,6 +29,16 @@ struct InstrumentedProgramTestData
    std::string compiler_options;
 
 }; // end struct InstrumentedProgramTestData
+
+//--------------------------------------------------------------------------------------------------
+
+
+struct InstrumentedProgramWithScheduleTestData
+{
+   InstrumentedProgramTestData instrumentation_data;
+   scheduler::schedule_t schedule;
+
+}; // end struct InstrumentedProgramWithScheduleTestData
 
 //--------------------------------------------------------------------------------------------------
 
