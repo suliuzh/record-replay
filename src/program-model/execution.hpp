@@ -26,11 +26,12 @@ public:
 
    enum class Status
    {
-      RUNNING = 0,
-      DONE = 1,
-      DEADLOCK = 2,
-      BLOCKED = 3,
-      ERROR = 4
+      RUNNING,
+      DONE,
+      DEADLOCK,
+      ASSERTION_FAILURE,
+      BLOCKED,
+      ERROR
    };
 
    /// @brief Constructs an empty Execution object with given number of threads.

@@ -63,6 +63,8 @@ public:
 
    void post(const Thread::tid_t& tid, const instruction_t& task);
 
+   void post_assertion_failure(const Thread::tid_t& tid, const assertion_failure& error);
+
    /// @brief Handles a yield if tid is the currently executing Thread.
 
    void yield(const Thread::tid_t& tid);
@@ -129,11 +131,16 @@ public:
 
    std::vector<data_race_t> data_races() const;
 
+   bool has_assertion_failures();
+   std::vector<assertion_failure> assertion_failures();
+
 private:
    /// @brief Datastrucure mapping Thread::tid_t's to the associated Thread's posted
    /// next task.
 
    Tasks mTasks;
+
+   std::vector<assertion_failure> mAssertionFailures;
 
    /// @brief A shared pointer to the task currently being executed.
 

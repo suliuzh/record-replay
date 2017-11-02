@@ -199,7 +199,14 @@ void Scheduler::exit_function(const std::string& function_name)
 
 void Scheduler::notify_assertion_failure(const assertion_failure& error)
 {
-    std::cout << error << "\n";
+   const auto tid = wait_until_registered();
+   DEBUGF_SYNC(thread_str(tid), "notify_assertion_failure", error, "\n");
+   if (runs_controlled())
+   {
+      mPool.yield(tid);
+      mPool.post_assertion_failure(tid, error);
+      get_controllable_thread(tid).post_task();
+   }
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -312,7 +319,8 @@ controllable_thread& Scheduler::get_controllable_thread(const program_model::Thr
 bool Scheduler::runs_controlled()
 {
    const Execution::Status s = status();
-   return s != Execution::Status::BLOCKED && s != Execution::Status::ERROR;
+   return s != Execution::Status::BLOCKED && s != Execution::Status::ERROR &&
+          s != Execution::Status::ASSERTION_FAILURE;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -367,6 +375,19 @@ void Scheduler::run()
    while (status() == Execution::Status::RUNNING)
    {
       DEBUG_SYNC("---------- [round" << mLocVars->task_nr() << "]\n");
+
+      // Check for assertion failures
+      if (mPool.has_assertion_failures())
+      {
+         const auto failures = mPool.assertion_failures();
+         for (const auto& failure : failures)
+         {
+            std::cout << failure << "\n\n";
+         }
+         set_status(program_model::Execution::Status::ASSERTION_FAILURE);
+         break;
+      }
+
       if (mLocVars->task_nr() > 0)
       {
          E.push_back(*mPool.current_task(), mPool.program_state());
@@ -460,12 +481,6 @@ void Scheduler::report_error(const std::string& what)
 void Scheduler::close(Execution& E)
 {
    DEBUGF_SYNC("Scheduler", "close", "", to_string(status()) << "\n");
-   if (!runs_controlled())
-   {
-      std::lock_guard<std::mutex> lock(mRegMutex);
-      std::for_each(mControllableThreads.begin(), mControllableThreads.end(),
-                    [](auto& entry) { entry.second.grant_execution_right(); });
-   }
    // finish execution
    try
    {
@@ -478,6 +493,14 @@ void Scheduler::close(Execution& E)
    E.set_status(status());
    dump_execution(E);
    dump_data_races();
+
+   // let program finish or terminate
+   if (!runs_controlled())
+   {
+      std::lock_guard<std::mutex> lock(mRegMutex);
+      std::for_each(mControllableThreads.begin(), mControllableThreads.end(),
+                    [](auto& entry) { entry.second.grant_execution_right(); });
+   }
 
    if (status() == Execution::Status::DEADLOCK)
       std::terminate();
@@ -628,10 +651,10 @@ void wrapper_exit_function(const char* function_name)
 
 //--------------------------------------------------------------------------------------------------
 
-void wrapper_notify_assertion_failure(const char* function_name, const char* file_name, 
+void wrapper_notify_assertion_failure(const char* function_name, const char* file_name,
                                       unsigned int line_number, const char* assertion)
 {
-    the_scheduler.notify_assertion_failure({ assertion, file_name, function_name, line_number });
+   the_scheduler.notify_assertion_failure({assertion, file_name, function_name, line_number});
 }
 
 //--------------------------------------------------------------------------------------------------

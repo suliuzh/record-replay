@@ -24,6 +24,8 @@ std::string to_string(const Execution::Status& status)
          return "DONE";
       case Execution::Status::DEADLOCK:
          return "DEADLOCK";
+      case Execution::Status::ASSERTION_FAILURE:
+         return "ASSERTION_FAILURE";
       case Execution::Status::BLOCKED:
          return "BLOCKED";
       case Execution::Status::ERROR:
@@ -60,6 +62,10 @@ std::istream& operator>>(std::istream& is, Execution::Status& status)
       else if (str == "DEADLOCK")
       {
          status = Execution::Status::DEADLOCK;
+      }
+      else if (str == "ASSERTION_FAILURE")
+      {
+         status = Execution::Status::ASSERTION_FAILURE;
       }
       else if (str == "BLOCKED")
       {

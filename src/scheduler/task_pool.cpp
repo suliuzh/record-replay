@@ -47,6 +47,24 @@ void TaskPool::post(const Thread::tid_t& tid, const instruction_t& task)
 
 //--------------------------------------------------------------------------------------------------
 
+void TaskPool::post_assertion_failure(const Thread::tid_t& tid, const assertion_failure& error)
+{
+   std::lock_guard<std::mutex> lock_mutex(mMutex);
+
+   DEBUGF_SYNC("Taskpool", "post_assertion_failure", tid, "\n");
+
+   auto task_it(mTasks.find(tid));
+   assert(task_it == mTasks.end());
+
+   mAssertionFailures.push_back(error);
+
+   set_status(tid, program_model::Thread::Status::FINISHED);
+
+   mModified.notify_one();
+}
+
+//--------------------------------------------------------------------------------------------------
+
 void TaskPool::yield(const Thread::tid_t& tid)
 {
    std::lock_guard<std::mutex> guard(mMutex);
@@ -243,6 +261,22 @@ std::vector<data_race_t> TaskPool::data_races() const
 {
    std::lock_guard<std::mutex> lock(m_objects_mutex);
    return m_data_races;
+}
+
+//--------------------------------------------------------------------------------------------------
+
+bool TaskPool::has_assertion_failures()
+{
+   std::lock_guard<std::mutex> guard(mMutex);
+   return !mAssertionFailures.empty();
+}
+
+//--------------------------------------------------------------------------------------------------
+
+std::vector<assertion_failure> TaskPool::assertion_failures()
+{
+   std::lock_guard<std::mutex> guard(mMutex);
+   return mAssertionFailures;
 }
 
 //--------------------------------------------------------------------------------------------------
