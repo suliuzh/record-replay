@@ -48,25 +48,10 @@ private:
 
 std::ostream& operator<<(std::ostream&, const memory_object&);
 
-/// @brief Returns the set of instructions posted for the given object that form
-/// a data race with the given instruction.
+/// @brief Returns the set of instructions posted for the given object that form a data race with
+/// the given instruction.
 
-struct get_data_races : public boost::static_visitor<std::vector<data_race_t>>
-{
-   get_data_races(const memory_object& object);
-
-   std::vector<data_race_t> operator()(const program_model::memory_instruction& instruction);
-
-   // Default case
-   template <typename T>
-   std::vector<data_race_t> operator()(const T&) const
-   {
-      return {};
-   }
-
-   const memory_object& m_object;
-
-}; // end struct get_data_races
+std::vector<data_race_t> get_data_races(const memory_object& object, const program_model::memory_instruction& instruction);
 
 //--------------------------------------------------------------------------------------------------
 

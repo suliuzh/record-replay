@@ -334,7 +334,7 @@ void TaskPool::update_object_post(const Thread::tid_t& tid, const instruction_t&
                .first;
 
       // update dataraces
-      auto data_races = get_data_races(it->second)(task);
+      auto data_races = get_data_races(it->second, *memory_instr);
       std::move(data_races.begin(), data_races.end(), std::back_inserter(m_data_races));
 
       enabled = it->second.request(*memory_instr);

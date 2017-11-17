@@ -15,14 +15,7 @@ namespace scheduler {
 
 //--------------------------------------------------------------------------------------------------
 
-get_data_races::get_data_races(const memory_object& object)
-: m_object(object)
-{
-}
-
-//--------------------------------------------------------------------------------------------------
-
-std::vector<data_race_t> get_data_races::operator()(
+std::vector<data_race_t> get_data_races(const memory_object& object,
    const program_model::memory_instruction& instruction)
 {
    using namespace program_model;
@@ -33,10 +26,10 @@ std::vector<data_race_t> get_data_races::operator()(
    const auto operation = instruction.operation();
    if (operation == memory_operation::Store || operation == memory_operation::ReadModifyWrite)
    {
-      std::transform(m_object.begin(0), m_object.end(0), std::back_inserter(data_races),
+      std::transform(object.begin(0), object.end(0), std::back_inserter(data_races),
                      convert_to_race);
    }
-   std::transform(m_object.begin(1), m_object.end(1), std::back_inserter(data_races),
+   std::transform(object.begin(1), object.end(1), std::back_inserter(data_races),
                   convert_to_race);
    // filter the ones with two atomic operations out
    data_races.erase(std::remove_if(data_races.begin(), data_races.end(),
@@ -115,6 +108,7 @@ std::ostream& operator<<(std::ostream& os, const memory_object& object)
                     [&os](const auto& item) { os << item.second << ", "; });
       os << "}";
    });
+   os << "\n}";
    return os;
 }
 

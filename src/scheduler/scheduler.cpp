@@ -533,6 +533,7 @@ void Scheduler::dump_data_races() const
    for (const auto& data_race : mPool.data_races())
    {
       write_to_stream(ofs, data_race);
+      write_to_stream(std::cout, data_race);
    }
    ofs << "\n>>>>>\n\n";
    ofs.close();

@@ -317,6 +317,15 @@ auto creator::visitAtomicRMWInst(llvm::AtomicRMWInst& instr) -> return_type
 
 //--------------------------------------------------------------------------------------------------
 
+auto creator::visitAtomicCmpXchgInst(llvm::AtomicCmpXchgInst& instr) -> return_type
+{
+   assert(instr.isAtomic());
+   return create<memory_instruction>(instr, memory_operation::ReadModifyWrite,
+                                     instr.getPointerOperand(), true);
+}
+
+//--------------------------------------------------------------------------------------------------
+
 auto creator::visitCallInst(llvm::CallInst& instr) -> return_type
 {
    return handle_call_and_invoke_instr(instr, instr.getCalledFunction(), instr.arg_operands());

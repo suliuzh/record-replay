@@ -95,6 +95,7 @@ struct creator : public llvm::InstVisitor<creator, boost::optional<visible_instr
    return_type visitLoadInst(llvm::LoadInst& instr);
    return_type visitStoreInst(llvm::StoreInst& instr);
    return_type visitAtomicRMWInst(llvm::AtomicRMWInst& instr);
+   return_type visitAtomicCmpXchgInst(llvm::AtomicCmpXchgInst& instr);
    return_type visitCallInst(llvm::CallInst& instr);
    return_type visitInvokeInst(llvm::InvokeInst& instr);
 
