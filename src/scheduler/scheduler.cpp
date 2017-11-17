@@ -31,6 +31,16 @@ std::string pid_to_string(const pthread_t& pid)
    }
    return stream.str();
 }
+
+//--------------------------------------------------------------------------------------------------
+
+void dump_data_races(const std::vector<data_race_t>& data_races)
+{
+   for (const auto& data_race : data_races)
+   {
+      write_to_stream(std::cout, data_race);
+   }
+}
 } // end namespace
 
 
@@ -491,8 +501,15 @@ void Scheduler::close(Execution& E)
       ERROR("Scheduler::close", e.what());
    }
    E.set_status(status());
+   
+   const auto data_races = mPool.data_races();
+   if (!data_races.empty())
+   {
+      E.set_status(program_model::Execution::Status::DATARACE);
+      dump_data_races(data_races);
+   }
+   
    dump_execution(E);
-   dump_data_races();
 
    // let program finish or terminate
    if (!runs_controlled())
@@ -522,21 +539,6 @@ void Scheduler::dump_execution(const Execution& E) const
       record_short << to_short_string(E);
       record_short.close();
    }
-}
-
-//--------------------------------------------------------------------------------------------------
-
-void Scheduler::dump_data_races() const
-{
-   std::ofstream ofs;
-   ofs.open("data_races.txt", std::ofstream::app);
-   for (const auto& data_race : mPool.data_races())
-   {
-      write_to_stream(ofs, data_race);
-      write_to_stream(std::cout, data_race);
-   }
-   ofs << "\n>>>>>\n\n";
-   ofs.close();
 }
 
 //--------------------------------------------------------------------------------------------------

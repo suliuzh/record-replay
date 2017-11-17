@@ -149,7 +149,6 @@ private:
    void close(Execution& E);
 
    void dump_execution(const Execution& E) const;
-   void dump_data_races() const;
 
 }; // end class Scheduler
 

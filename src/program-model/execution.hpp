@@ -28,6 +28,7 @@ public:
    {
       RUNNING,
       DONE,
+      DATARACE,
       DEADLOCK,
       ASSERTION_FAILURE,
       BLOCKED,
